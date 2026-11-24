@@ -1,0 +1,65 @@
+--- a/src/gui/kernel/qwidget_x11.cpp
++++ b/src/gui/kernel/qwidget_x11.cpp
+@@ -1121,6 +1121,20 @@
+     }
+ }
+ 
++static bool ozoneWslgToolDock(const QWidget *widget);
++
++static bool x11WindowHasParent(Window window, Window expectedParent)
++{
++    Window root = XNone;
++    Window parent = XNone;
++    Window *children = 0;
++    unsigned int childCount = 0;
++    const bool queried = XQueryTree(X11->display, window, &root, &parent, &children, &childCount);
++    if (children)
++        XFree(children);
++    return queried && parent == expectedParent;
++}
++
+ void QWidgetPrivate::setParent_sys(QWidget *parent, Qt::WindowFlags f)
+ {
+     Q_Q(QWidget);
+@@ -1173,8 +1187,14 @@
+     // destroyed when emitting the child remove event below. See QWorkspace.
+     if (wasCreated && old_winid) {
+         XUnmapWindow(X11->display, old_winid);
+-        if (!old_xinfo.screen() != xinfo.screen())
+-            XReparentWindow(X11->display, old_winid, RootWindow(X11->display, xinfo.screen()), 0, 0);
++        if ((!old_xinfo.screen()) != xinfo.screen()) {
++            const Window root = RootWindow(X11->display, xinfo.screen());
++            const bool finishingOzoneDrag = (data.window_flags & Qt::X11BypassWindowManagerHint)
++                && !(f & Qt::X11BypassWindowManagerHint) && ozoneWslgToolDock(q);
++            // Weston can keep a stale record when it gets another reparent to the same root.
++            if (!finishingOzoneDrag || !x11WindowHasParent(old_winid, root))
++                XReparentWindow(X11->display, old_winid, root, 0, 0);
++        }
+     }
+     if (topData) {
+         topData->parentWinId = 0;
+@@ -1854,10 +1874,9 @@
+     QApplication::sendEvent(this, &e);
+ }
+ 
+-static bool ozoneWslgFloatingDock(const QWidget *widget)
++static bool ozoneWslgToolDock(const QWidget *widget)
+ {
+     if (!widget->isWindow() || widget->windowType() != Qt::Tool
+-        || (widget->windowFlags() & Qt::X11BypassWindowManagerHint)
+         || !widget->inherits("QDockWidget")
+         || !QCoreApplication::applicationFilePath().endsWith(QLatin1String("/Ozone")))
+         return false;
+@@ -1880,6 +1899,12 @@
+         && stat(wslgSocket.constData(), &wslgInfo) == 0
+         && S_ISSOCK(localInfo.st_mode)
+         && localInfo.st_dev == wslgInfo.st_dev && localInfo.st_ino == wslgInfo.st_ino;
++}
++
++static bool ozoneWslgFloatingDock(const QWidget *widget)
++{
++    return !(widget->windowFlags() & Qt::X11BypassWindowManagerHint)
++        && ozoneWslgToolDock(widget);
+ }
+ 
+ /*!

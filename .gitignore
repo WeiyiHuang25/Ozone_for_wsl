@@ -1,0 +1,8 @@
+/build/
+/vendor/
+__pycache__/
+*.7z
+*.log
+*.so
+*.so.*
+*.jdebug.user
