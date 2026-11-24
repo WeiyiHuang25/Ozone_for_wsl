@@ -4,6 +4,12 @@
 修正停靠面板拖出后无法操作、偶发消失，以及 Weston 留下 74×74 空外框的问题。
 仓库包含源码补丁、构建脚本和隔离试用脚本。Ozone 本体从 SEGGER 获取。
 
+## 下载预编译版
+
+Ubuntu 26.04 x86-64 的安装包和对应 Qt 源码见 [GitHub Releases](https://github.com/WeiyiHuang25/Ozone_for_wsl/releases)。
+解压安装包后运行 `./install.sh`，再运行 `~/.local/bin/ozone-wslg`。
+安装脚本使用当前用户的目录，并读取本机已安装的 SEGGER Ozone V3.52。
+
 ## 补丁
 
 1. 修复 Qt4 的 `Q_FOREACH` 与新版 GCC 的兼容问题，保留 `break` 和 `continue` 语义。

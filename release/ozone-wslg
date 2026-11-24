@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+app=$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")
+data_root=$(dirname -- "$app")
+export DISPLAY=${DISPLAY:-:0}
+export LD_LIBRARY_PATH="$app/Lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export XDG_CONFIG_HOME="$data_root/config"
+export XDG_DATA_HOME="$data_root/data"
+exec "$app/Ozone" "$@"
